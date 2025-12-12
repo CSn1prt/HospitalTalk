@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/conversation_provider.dart';
+import 'providers/soap_note_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -12,8 +13,11 @@ class HospitalTalkApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ConversationProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ConversationProvider()),
+        ChangeNotifierProvider(create: (context) => SoapNoteProvider()),
+      ],
       child: MaterialApp(
         title: 'Hospital Talk',
         theme: ThemeData(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/conversation_provider.dart';
 import 'recording_screen.dart';
 import 'conversation_list_screen.dart';
+import 'soap_note_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -133,7 +134,28 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         icon: const Icon(Icons.history),
-                        label: const Text('View All Conversations'),
+                        label: const Text('View Conversations'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SoapNoteListScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.assignment),
+                        label: const Text('View SOAP Notes'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ),
                   ],

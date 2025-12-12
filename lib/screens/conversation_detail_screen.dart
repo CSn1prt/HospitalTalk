@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/conversation.dart';
+import '../models/soap_note.dart';
 import '../providers/conversation_provider.dart';
+import '../services/database_helper.dart';
+import 'soap_note_screen.dart';
 
 class ConversationDetailScreen extends StatefulWidget {
   final Conversation conversation;
@@ -19,6 +22,25 @@ class ConversationDetailScreen extends StatefulWidget {
 
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   bool _isPlaying = false;
+  SoapNote? _existingSoapNote;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSoapNote();
+  }
+
+  Future<void> _loadSoapNote() async {
+    if (widget.conversation.id != null) {
+      final soapNote = await DatabaseHelper.instance
+          .querySoapNoteByConversation(widget.conversation.id!);
+      if (mounted) {
+        setState(() {
+          _existingSoapNote = soapNote;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +64,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 case 'copy':
                   _copyToClipboard();
                   break;
+                case 'soap':
+                  _openSoapNote();
+                  break;
                 case 'delete':
                   _deleteConversation();
                   break;
@@ -55,6 +80,16 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                     Icon(Icons.copy),
                     SizedBox(width: 8),
                     Text('Copy Text'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'soap',
+                child: Row(
+                  children: [
+                    const Icon(Icons.note_add, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    Text(_existingSoapNote != null ? 'View SOAP Note' : 'Create SOAP Note'),
                   ],
                 ),
               ),
@@ -169,6 +204,75 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                         ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (_existingSoapNote != null) ...[
+              const SizedBox(height: 16),
+              Card(
+                color: Colors.blue[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment, color: Colors.blue[700]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'SOAP Note Available',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.blue[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (_existingSoapNote!.isFinalized)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'Finalized',
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'Draft',
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Chief Complaint: ${_existingSoapNote!.chiefComplaint}',
+                        style: const TextStyle(fontSize: 14),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _openSoapNote,
+                        icon: const Icon(Icons.open_in_new),
+                        label: Text(_existingSoapNote!.isFinalized ? 'View SOAP Note' : 'Edit SOAP Note'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[100],
+                          foregroundColor: Colors.blue[700],
+                        ),
                       ),
                     ],
                   ),
@@ -318,6 +422,23 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       if (mounted) {
         Navigator.of(context).pop();
       }
+    }
+  }
+
+  void _openSoapNote() async {
+    if (widget.conversation.id == null) return;
+
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SoapNoteScreen(
+          conversation: widget.conversation,
+          existingSoapNote: _existingSoapNote,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _loadSoapNote();
     }
   }
 }
