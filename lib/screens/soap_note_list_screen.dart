@@ -16,7 +16,6 @@ class SoapNoteListScreen extends StatefulWidget {
 
 class _SoapNoteListScreenState extends State<SoapNoteListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<SoapNote> _filteredSoapNotes = [];
   bool _showOnlyFinalized = false;
 
   @override
@@ -33,21 +32,19 @@ class _SoapNoteListScreenState extends State<SoapNoteListScreen> {
     super.dispose();
   }
 
-  void _filterSoapNotes(List<SoapNote> allNotes) {
+  List<SoapNote> _getFilteredSoapNotes(List<SoapNote> allNotes) {
     final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredSoapNotes = allNotes.where((note) {
-        final matchesSearch = query.isEmpty ||
-            note.patientId.toLowerCase().contains(query) ||
-            note.chiefComplaint.toLowerCase().contains(query) ||
-            note.subjective.toLowerCase().contains(query) ||
-            note.assessment.toLowerCase().contains(query);
-        
-        final matchesFilter = !_showOnlyFinalized || note.isFinalized;
-        
-        return matchesSearch && matchesFilter;
-      }).toList();
-    });
+    return allNotes.where((note) {
+      final matchesSearch = query.isEmpty ||
+          note.patientId.toLowerCase().contains(query) ||
+          note.chiefComplaint.toLowerCase().contains(query) ||
+          note.subjective.toLowerCase().contains(query) ||
+          note.assessment.toLowerCase().contains(query);
+      
+      final matchesFilter = !_showOnlyFinalized || note.isFinalized;
+      
+      return matchesSearch && matchesFilter;
+    }).toList();
   }
 
   @override
@@ -94,8 +91,7 @@ class _SoapNoteListScreenState extends State<SoapNoteListScreen> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
-                final provider = context.read<SoapNoteProvider>();
-                _filterSoapNotes(provider.soapNotes);
+                setState(() {});
               },
             ),
           ),
@@ -106,9 +102,9 @@ class _SoapNoteListScreenState extends State<SoapNoteListScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                _filterSoapNotes(provider.soapNotes);
+                final filteredSoapNotes = _getFilteredSoapNotes(provider.soapNotes);
 
-                if (_filteredSoapNotes.isEmpty) {
+                if (filteredSoapNotes.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -145,9 +141,9 @@ class _SoapNoteListScreenState extends State<SoapNoteListScreen> {
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _filteredSoapNotes.length,
+                  itemCount: filteredSoapNotes.length,
                   itemBuilder: (context, index) {
-                    final soapNote = _filteredSoapNotes[index];
+                    final soapNote = filteredSoapNotes[index];
                     return SoapNoteCard(
                       soapNote: soapNote,
                       onTap: () => _openSoapNote(soapNote),
