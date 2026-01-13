@@ -26,9 +26,25 @@ class ConversationProvider with ChangeNotifier {
   String get patientName => _patientName;
 
   Future<void> initialize() async {
-    await _audioService.initializeRecorder();
-    await _speechService.initialize();
-    await loadConversations();
+    print('DEBUG: ConversationProvider.initialize called');
+    try {
+      print('DEBUG: Initializing audio service...');
+      await _audioService.initializeRecorder();
+      print('DEBUG: Audio service initialized');
+      
+      print('DEBUG: Initializing speech service...');
+      await _speechService.initialize();
+      print('DEBUG: Speech service initialized');
+      
+      print('DEBUG: Loading conversations...');
+      await loadConversations();
+      print('DEBUG: Conversations loaded');
+      print('DEBUG: ConversationProvider initialization complete');
+    } catch (e) {
+      print('DEBUG: ERROR during ConversationProvider initialization: $e');
+      print('DEBUG: Error type: ${e.runtimeType}');
+      rethrow;
+    }
   }
 
   void setDoctorName(String name) {
@@ -47,7 +63,12 @@ class ConversationProvider with ChangeNotifier {
   }
 
   Future<bool> startNewConversation() async {
+    print('DEBUG: Starting new conversation...');
+    print('DEBUG: Doctor name: "$_doctorName"');
+    print('DEBUG: Patient name: "$_patientName"');
+    
     if (_doctorName.isEmpty || _patientName.isEmpty) {
+      print('DEBUG: ERROR - Doctor or patient name is empty');
       return false;
     }
 
@@ -61,17 +82,30 @@ class ConversationProvider with ChangeNotifier {
     _currentTranscription = '';
     notifyListeners();
 
-    return await startRecording();
+    print('DEBUG: Attempting to start recording...');
+    final result = await startRecording();
+    print('DEBUG: Recording start result: $result');
+    return result;
   }
 
   Future<bool> startRecording() async {
-    if (_isRecording) return false;
+    print('DEBUG: startRecording called');
+    if (_isRecording) {
+      print('DEBUG: Already recording, returning false');
+      return false;
+    }
 
+    print('DEBUG: Attempting to start audio recording...');
     final recordingStarted = await _audioService.startRecording();
+    print('DEBUG: Audio recording started: $recordingStarted');
+    
     if (recordingStarted) {
       _isRecording = true;
+      print('DEBUG: Starting transcription...');
       await _startTranscription();
       notifyListeners();
+    } else {
+      print('DEBUG: ERROR - Audio recording failed to start');
     }
     return recordingStarted;
   }

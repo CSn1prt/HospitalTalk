@@ -16,13 +16,42 @@ class _HomeScreenState extends State<HomeScreen> {
   final _doctorController = TextEditingController();
   final _patientController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isInitialized = false;
+  bool _isInitializing = true;
+  String? _initializationError;
 
   @override
   void initState() {
     super.initState();
+    // Defer initialization until after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ConversationProvider>().initialize();
+      _initializeServices();
     });
+  }
+
+  Future<void> _initializeServices() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isInitializing = true;
+      _initializationError = null;
+    });
+
+    try {
+      await context.read<ConversationProvider>().initialize();
+      if (!mounted) return;
+      setState(() {
+        _isInitialized = true;
+        _isInitializing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isInitialized = false;
+        _isInitializing = false;
+        _initializationError = e.toString();
+      });
+    }
   }
 
   @override
@@ -93,15 +122,75 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton.icon(
-                              onPressed: _startRecording,
-                              icon: const Icon(Icons.mic),
-                              label: const Text('Start Recording'),
+                              onPressed: _isInitialized ? _startRecording : null,
+                              icon: _isInitializing 
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.mic),
+                              label: Text(_isInitializing 
+                                  ? 'Initializing...' 
+                                  : _initializationError != null 
+                                      ? 'Error - Try Restart'
+                                      : 'Start Recording'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
+                                backgroundColor: _initializationError != null 
+                                    ? Colors.orange 
+                                    : Colors.red,
                                 foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey,
                               ),
                             ),
                           ),
+                          if (_initializationError != null) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                border: Border.all(color: Colors.red[300]!),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Initialization Error:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red[800],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _initializationError!,
+                                    style: TextStyle(
+                                      color: Colors.red[700],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 32,
+                                    child: ElevatedButton(
+                                      onPressed: _initializeServices,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('Retry Initialization'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

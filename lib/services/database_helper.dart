@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:path/path.dart';
 import '../models/conversation.dart';
 import '../models/soap_note.dart';
@@ -43,11 +45,25 @@ class DatabaseHelper {
   Future<Database> get database async => _database ??= await _initDatabase();
 
   _initDatabase() async {
-    String path = join(await getDatabasesPath(), _databaseName);
-    return await openDatabase(path,
-        version: _databaseVersion, 
-        onCreate: _onCreate,
-        onUpgrade: _onUpgrade);
+    if (kIsWeb) {
+      // For web, use sqflite_common_ffi_web
+      databaseFactory = databaseFactoryFfiWeb;
+      return await databaseFactory.openDatabase(
+        _databaseName,
+        options: OpenDatabaseOptions(
+          version: _databaseVersion,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
+        ),
+      );
+    } else {
+      // For native platforms
+      String path = join(await getDatabasesPath(), _databaseName);
+      return await openDatabase(path,
+          version: _databaseVersion,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade);
+    }
   }
 
   Future _onCreate(Database db, int version) async {
