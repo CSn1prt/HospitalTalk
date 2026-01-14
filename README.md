@@ -47,3 +47,26 @@ samples, guidance on mobile development, and a full API reference.
 
   The implementation follows EMR standards and integrates seamlessly with your existing audio recording and
   transcription workflow. All data remains securely stored locally on the device.
+
+  This project uses a comprehensive speech-to-text system built on Flutter with the following key technologies:
+
+  Core Speech-to-Text Features
+
+  Primary Library: speech_to_text package (v7.0.0) for real-time speech recognition
+
+  Key Components:
+  - Speech Service (lib/services/speech_service.dart): Handles live transcription with confidence tracking, multiple locales, and 30-second max recording sessions
+  - Audio Service (lib/services/audio_service.dart): Records audio files in AAC format using flutter_sound package
+  - Conversation Provider (lib/providers/conversation_provider.dart): Coordinates both audio recording and speech recognition simultaneously
+
+  Main Features
+
+  1. Real-time transcription with live text updates during recording
+  2. Dual recording: Both audio files and text transcription are saved
+  3. Offline capability using device's native speech recognition
+  4. Complete workflow: Setup → Recording → Transcription → Storage → Retrieval
+  5. Cross-platform support with proper permissions for Android/iOS
+  6. Database integration using SQLite for storing conversations and transcriptions
+
+  The system is designed for medical conversations, allowing doctors to record patient interactions with live speech-to-text conversion while maintaining audio backups for
+  accuracy verification.
